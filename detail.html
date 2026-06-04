@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>冰岛蓝冰洞探险 - 100种不可思议旅行</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          screens: { 'desktop': '1200px' },
+          colors: {
+            'bg-primary': '#0a0a0a',
+            'brand': '#00f0ff',
+            'brand-dark': '#00d8e5',
+          },
+          fontFamily: {
+            'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    /* ===== Design Tokens (same as index.html) ===== */
+    :root {
+      --color-bg-primary: #0a0a0a;
+      --color-text-primary: #ffffff;
+      --color-text-secondary: #a0a0a0;
+      --color-text-tertiary: #666666;
+      --color-brand: #00f0ff;
+      --color-brand-glow: rgba(0, 240, 255, 0.10);
+      --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* ===== Base ===== */
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== Navbar (same as index.html) ===== */
+    .navbar {
+      transition: background-color 300ms var(--ease-out-cubic),
+                  box-shadow 300ms var(--ease-out-cubic);
+    }
+    .navbar.scrolled {
+      background-color: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    /* ===== Hero Section ===== */
+    .hero-bg {
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .hero-gradient {
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.9) 100%
+      );
+    }
+    .hero-title {
+      font-weight: 700;
+      line-height: 1.1;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 800px;
+    }
+
+    /* ===== Scroll Indicator ===== */
+    @keyframes breathe {
+      0%, 100% { opacity: 0.4; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(6px); }
+    }
+    .scroll-indicator {
+      animation: breathe 2s ease-in-out infinite;
+    }
+
+    /* ===== Carousel ===== */
+    .carousel-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #141414;
+    }
+    .carousel-slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 300ms var(--ease-out-cubic);
+      pointer-events: none;
+    }
+    .carousel-slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .carousel-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 500ms ease-out;
+    }
+    .carousel-slide img.loaded {
+      opacity: 1;
+    }
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 300ms var(--ease-out-cubic),
+                  background 300ms var(--ease-out-cubic),
+                  color 300ms var(--ease-out-cubic);
+      font-size: 18px;
+      user-select: none;
+    }
+    .carousel-container:hover .carousel-arrow {
+      opacity: 1;
+    }
+    .carousel-arrow:hover {
+      background: rgba(0, 0, 0, 0.75);
+      color: #00f0ff;
+    }
+    .carousel-arrow.prev { left: 12px; }
+    .carousel-arrow.next { right: 12px; }
+
+    /* Carousel dots */
+    .carousel-dots {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    .carousel-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 300ms var(--ease-out-cubic);
+      border: none;
+      padding: 0;
+    }
+    .carousel-dot.active {
+      background: #00f0ff;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    }
+
+    /* ===== Info Cards ===== */
+    .info-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: transform 300ms var(--ease-out-cubic),
+                  border-color 300ms var(--ease-out-cubic);
+    }
+    @media (hover: hover) {
+      .info-card:hover {
+        transform: translateY(-4px);
+        border-color: #00f0ff;
+      }
+    }
+
+    /* ===== Highlights ===== */
+    .highlight-item {
+      border-left: 3px solid #00f0ff;
+      padding: 16px 0 16px 20px;
+      transition: transform 300ms var(--ease-out-cubic),
+                  border-color 300ms var(--ease-out-cubic);
+    }
+    @media (hover: hover) {
+      .highlight-item:hover {
+        transform: translateY(-4px);
+        border-color: #00f0ff;
+      }
+    }
+
+    /* ===== Tags ===== */
+    .detail-tag {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.1);
+      border-radius: 8px;
+      padding: 6px 12px;
+      white-space: nowrap;
+      transition: background 300ms var(--ease-out-cubic);
+      cursor: default;
+    }
+    .detail-tag:hover {
+      background: rgba(0, 240, 255, 0.18);
+    }
+
+    /* ===== Scroll-Reveal ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 400ms var(--ease-out-cubic),
+                  transform 400ms var(--ease-out-cubic);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== Footer ===== */
+    .site-footer {
+      background-color: var(--color-bg-primary);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 48px 0;
+      text-align: center;
+      font-size: 14px;
+      color: #666666;
+    }
+
+    /* ===== Section Titles ===== */
+    .section-title {
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.2;
+      color: #ffffff;
+      margin-bottom: 16px;
+    }
+
+    /* ===== Back Button ===== */
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 300ms var(--ease-out-cubic);
+      text-decoration: none;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .back-btn:hover { color: #00f0ff; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ===== 1. Navbar ===== -->
+  <nav id="navbar" class="navbar fixed top-0 left-0 right-0 h-16 z-50 flex items-center">
+    <div class="w-full max-w-[1440px] mx-auto px-4 md:px-8 desktop:px-16 flex items-center justify-between">
+      <!-- Back button -->
+      <a href="index.html" class="back-btn" aria-label="返回首页">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M12 4 L6 10 L12 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>返回</span>
+      </a>
+      <!-- Logo -->
+      <span class="text-xl font-bold text-white tracking-tight">100种不可思议旅行</span>
+      <!-- Search icon (decorative) -->
+      <button class="text-white opacity-60 cursor-default bg-transparent border-0 p-0" aria-label="搜索" tabindex="-1">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M13 13 L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== 2. Hero Section ===== -->
+  <section class="relative h-screen overflow-hidden">
+    <!-- Background image -->
+    <div
+      class="hero-bg absolute inset-0"
+      style="background-image: url('https://picsum.photos/1920/1080?random=100');"
+      role="img"
+      aria-label="冰岛蓝冰洞封面图"
+    ></div>
+    <!-- Gradient overlay -->
+    <div class="hero-gradient absolute inset-0"></div>
+
+    <!-- Text content -->
+    <div class="absolute bottom-16 left-0 right-0 px-4 md:px-8 desktop:px-16">
+      <div class="max-w-[1200px] mx-auto">
+        <h1 class="hero-title text-[32px] md:text-[48px] desktop:text-[64px] text-white mb-4">
+          冰岛蓝冰洞：深入冰川心脏的极致探险
+        </h1>
+        <p class="text-sm md:text-base text-[#a0a0a0] mb-6 max-w-[600px]"
+           style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+          在世界最壮观的冰川内部，探索由千年冰层折射出的梦幻蓝色世界
+        </p>
+        <span class="inline-block text-xs font-medium text-[#00f0ff] bg-[rgba(0,240,255,0.1)] rounded-lg px-3 py-1">
+          冰岛 · 瓦特纳冰川
+        </span>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 scroll-indicator">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6 L8 10 L12 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="text-xs text-white opacity-60">向下滑动查看更多</span>
+    </div>
+  </section>
+
+  <!-- ===== 3. Content Area ===== -->
+  <main class="max-w-[1200px] mx-auto px-4 md:px-8 desktop:px-16">
+
+    <!-- ===== 3.1 Image Carousel ===== -->
+    <section class="reveal mt-12 md:mt-16" aria-label="图片轮播">
+      <div
+        id="carousel"
+        class="carousel-container"
+        style="height: 300px;"
+        aria-roledescription="carousel"
+        aria-label="冰岛蓝冰洞图集"
+      >
+        <!-- Slides -->
+        <div class="carousel-slide active" aria-roledescription="slide" aria-label="第1张，共5张">
+          <img data-src="https://picsum.photos/1200/675?random=200" alt="冰岛蓝冰洞全景">
+        </div>
+        <div class="carousel-slide" aria-roledescription="slide" aria-label="第2张，共5张">
+          <img data-src="https://picsum.photos/1200/675?random=201" alt="冰洞内部晶莹剔透的冰壁">
+        </div>
+        <div class="carousel-slide" aria-roledescription="slide" aria-label="第3张，共5张">
+          <img data-src="https://picsum.photos/1200/675?random=202" alt="阳光穿透冰层折射蓝光">
+        </div>
+        <div class="carousel-slide" aria-roledescription="slide" aria-label="第4张，共5张">
+          <img data-src="https://picsum.photos/1200/675?random=203" alt="探险者在冰洞中穿行">
+        </div>
+        <div class="carousel-slide" aria-roledescription="slide" aria-label="第5张，共5张">
+          <img data-src="https://picsum.photos/1200/675?random=204" alt="冰洞出口处的极光">
+        </div>
+
+        <!-- Arrow buttons -->
+        <button class="carousel-arrow prev" id="carousel-prev" aria-label="上一张">&larr;</button>
+        <button class="carousel-arrow next" id="carousel-next" aria-label="下一张">&rarr;</button>
+
+        <!-- Dot indicators -->
+        <div class="carousel-dots" id="carousel-dots">
+          <button class="carousel-dot active" data-index="0" aria-label="第1张"></button>
+          <button class="carousel-dot" data-index="1" aria-label="第2张"></button>
+          <button class="carousel-dot" data-index="2" aria-label="第3张"></button>
+          <button class="carousel-dot" data-index="3" aria-label="第4张"></button>
+          <button class="carousel-dot" data-index="4" aria-label="第5张"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3.2 Info Cards ===== -->
+    <section class="reveal mt-12 md:mt-16" aria-label="实用信息">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Duration -->
+        <div class="info-card flex items-center gap-4">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <circle cx="14" cy="14" r="10" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M14 8 L14 14 L18 16" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <p class="text-xs text-[#666666] uppercase tracking-wide mb-0.5">体验时长</p>
+            <p class="text-lg font-semibold text-white">3天2晚</p>
+          </div>
+        </div>
+
+        <!-- Season -->
+        <div class="info-card flex items-center gap-4">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <circle cx="14" cy="14" r="10" stroke="#00f0ff" stroke-width="1.5"/>
+            <path d="M14 7 L14 14 L19 16" stroke="#00f0ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="14" cy="14" r="2" fill="#00f0ff" opacity="0.4"/>
+          </svg>
+          <div>
+            <p class="text-xs text-[#666666] uppercase tracking-wide mb-0.5">最佳季节</p>
+            <p class="text-lg font-semibold text-white">11月-次年3月</p>
+          </div>
+        </div>
+
+        <!-- Difficulty -->
+        <div class="info-card flex items-center gap-4">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <rect x="5" y="14" width="4" height="10" rx="1" stroke="#00f0ff" stroke-width="1.5"/>
+            <rect x="12" y="9" width="4" height="15" rx="1" stroke="#00f0ff" stroke-width="1.5"/>
+            <rect x="19" y="4" width="4" height="20" rx="1" stroke="#00f0ff" stroke-width="1.5"/>
+          </svg>
+          <div>
+            <p class="text-xs text-[#666666] uppercase tracking-wide mb-0.5">难度等级</p>
+            <p class="text-lg font-semibold text-white">硬核</p>
+          </div>
+        </div>
+
+        <!-- Rarity -->
+        <div class="info-card flex items-center gap-4">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+            <path d="M14 3 L17 10 L24 11 L18.5 16.5 L20 23.5 L14 20 L8 23.5 L9.5 16.5 L4 11 L11 10 Z"
+                  stroke="#00f0ff" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <p class="text-xs text-[#666666] uppercase tracking-wide mb-0.5">小众程度</p>
+            <p class="text-lg font-semibold text-white">冷门</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3.3 Detailed Description ===== -->
+    <section class="reveal mt-12 md:mt-16" aria-label="详细介绍">
+      <h2 class="section-title">关于这次体验</h2>
+      <div class="max-w-[800px] text-[#a0a0a0] text-base leading-relaxed space-y-6">
+        <p>
+          在冰岛瓦特纳冰川国家公园深处，隐藏着一个每年只向200人开放的秘境——蓝冰洞。这里不是普通的旅游景点，而是一场需要体力、勇气和一点点疯狂的极地探险。
+        </p>
+        <p>
+          乘坐改装过的超级吉普穿越冰川边缘的崎岖地带，车轮碾过火山灰与冰雪混合的黑色荒原。当车辆无法继续前行，你需要穿上冰爪，在专业向导的带领下徒步穿越冰裂缝之间狭窄的通道，最终抵达那片令人窒息的蓝。
+        </p>
+        <p>
+          冰洞内部的光线来自冰川对阳光的折射——经过千年的挤压，冰层中的气泡被完全排除，只剩下密度极高、纯净如水晶的冰体。它吸收了光谱中除蓝色以外所有的光，于是你眼前的世界变成了梦幻的荧光蓝，如同置身于一颗巨大的蓝宝石之中。
+        </p>
+        <p>
+          在这个与世隔绝的空间里，时间仿佛凝固。唯一的声音是远处冰层缓慢移动的低沉轰鸣，以及自己心跳的回响。向导会在冰洞最深处停下来，让你关掉头灯，体验大约30秒的绝对黑暗与寂静——那是任何地方都无法复制的感受。
+        </p>
+        <p>
+          这次体验需要在冰岛南部的基地小镇住两晚，第一天进行冰川徒步训练和安全培训，第二天正式进入冰洞探险，第三天在返程前享受地热温泉。全程由拥有国际冰川向导认证的专业团队陪同，所有冰上装备由组织方提供。
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== 3.4 Highlights ===== -->
+    <section class="reveal mt-12 md:mt-16" aria-label="体验亮点">
+      <h2 class="section-title" style="margin-bottom: 24px;">为什么值得去</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="highlight-item">
+          <p class="text-white text-base leading-relaxed">穿越千年冰川隧道，见证冰层折射出的梦幻蓝光</p>
+        </div>
+        <div class="highlight-item">
+          <p class="text-white text-base leading-relaxed">专业冰洞向导全程陪同，确保安全地深入冰洞腹地</p>
+        </div>
+        <div class="highlight-item">
+          <p class="text-white text-base leading-relaxed">每年仅限200人获得许可，极致稀缺的准入资格</p>
+        </div>
+        <div class="highlight-item">
+          <p class="text-white text-base leading-relaxed">在冰洞深处体验绝对黑暗与寂静，此生仅有的感官体验</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3.5 Suitable For ===== -->
+    <section class="reveal mt-12 md:mt-16" aria-label="适合人群">
+      <h2 class="section-title">适合谁去</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Suitable -->
+        <div>
+          <p class="text-sm font-semibold text-[#00ff88] mb-4 flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M3 10 L7 14 L15 4" stroke="#00ff88" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            适合
+          </p>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M3 8 L6 11 L13 3" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              追求极致视觉冲击的自然摄影师
+            </li>
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M3 8 L6 11 L13 3" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              体能良好、不惧严寒的户外冒险者
+            </li>
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M3 8 L6 11 L13 3" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              对大自然的鬼斧神工充满敬畏的探索者
+            </li>
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M3 8 L6 11 L13 3" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              愿意为独特体验付出更多精力的旅行者
+            </li>
+          </ul>
+        </div>
+
+        <!-- Not Suitable -->
+        <div>
+          <p class="text-sm font-semibold text-[#ff4444] mb-4 flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M4 4 L14 14 M14 4 L4 14" stroke="#ff4444" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            不适合
+          </p>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M4 4 L12 12 M12 4 L4 12" stroke="#ff4444" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              有幽闭恐惧症的人群
+            </li>
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M4 4 L12 12 M12 4 L4 12" stroke="#ff4444" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              无法在零下10度环境中长时间停留者
+            </li>
+            <li class="flex items-start gap-2 text-sm text-[#a0a0a0]">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0" aria-hidden="true">
+                <path d="M4 4 L12 12 M12 4 L4 12" stroke="#ff4444" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              对体力消耗较大的活动缺乏准备的人
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3.6 Tag Cloud ===== -->
+    <section class="reveal mt-12 md:mt-16 mb-16" aria-label="相关标签">
+      <h2 class="section-title">相关标签</h2>
+      <div class="flex flex-wrap gap-3">
+        <span class="detail-tag">极地</span>
+        <span class="detail-tag">暗黑</span>
+        <span class="detail-tag">冷门</span>
+        <span class="detail-tag">硬核</span>
+        <span class="detail-tag">冰岛</span>
+        <span class="detail-tag">冰川探险</span>
+        <span class="detail-tag">自然奇观</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== 4. Footer ===== -->
+  <footer class="site-footer">
+    <p>&copy; 2026 飞猪旅行 100种不可思议旅行</p>
+  </footer>
+
+  <!-- ===== JavaScript ===== -->
+  <script>
+    (function () {
+      // ===== DOM Refs =====
+      var navbar = document.getElementById('navbar');
+      var carousel = document.getElementById('carousel');
+      var slides = carousel.querySelectorAll('.carousel-slide');
+      var dots = document.querySelectorAll('.carousel-dot');
+      var prevBtn = document.getElementById('carousel-prev');
+      var nextBtn = document.getElementById('carousel-next');
+      var currentSlide = 0;
+      var totalSlides = slides.length;
+      var autoplayTimer = null;
+      var AUTOPLAY_INTERVAL = 5000;
+
+      // ===== 1. Navbar scroll effect =====
+      function updateNavbar() {
+        if (window.scrollY > 100) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      }
+      window.addEventListener('scroll', updateNavbar, { passive: true });
+      updateNavbar();
+
+      // ===== 2. Carousel =====
+      function goToSlide(index) {
+        if (index === currentSlide) return;
+        // Remove active from current
+        slides[currentSlide].classList.remove('active');
+        dots[currentSlide].classList.remove('active');
+        // Set new
+        currentSlide = index;
+        slides[currentSlide].classList.add('active');
+        dots[currentSlide].classList.add('active');
+      }
+
+      function nextSlide() {
+        var next = (currentSlide + 1) % totalSlides;
+        goToSlide(next);
+      }
+
+      function prevSlide() {
+        var prev = (currentSlide - 1 + totalSlides) % totalSlides;
+        goToSlide(prev);
+      }
+
+      // Arrow buttons
+      prevBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        prevSlide();
+        resetAutoplay();
+      });
+      nextBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        nextSlide();
+        resetAutoplay();
+      });
+
+      // Dot buttons
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          var idx = parseInt(dot.dataset.index, 10);
+          goToSlide(idx);
+          resetAutoplay();
+        });
+      });
+
+      // Auto-play
+      function startAutoplay() {
+        autoplayTimer = setInterval(nextSlide, AUTOPLAY_INTERVAL);
+      }
+      function stopAutoplay() {
+        if (autoplayTimer) {
+          clearInterval(autoplayTimer);
+          autoplayTimer = null;
+        }
+      }
+      function resetAutoplay() {
+        stopAutoplay();
+        startAutoplay();
+      }
+
+      carousel.addEventListener('mouseenter', stopAutoplay);
+      carousel.addEventListener('mouseleave', startAutoplay);
+
+      // Touch / Mouse drag support
+      var dragStartX = 0;
+      var dragEndX = 0;
+
+      carousel.addEventListener('touchstart', function (e) {
+        dragStartX = e.touches[0].clientX;
+      }, { passive: true });
+
+      carousel.addEventListener('touchend', function (e) {
+        dragEndX = e.changedTouches[0].clientX;
+        handleSwipe();
+      });
+
+      carousel.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        dragStartX = e.clientX;
+      });
+
+      carousel.addEventListener('mouseup', function (e) {
+        dragEndX = e.clientX;
+        handleSwipe();
+      });
+
+      function handleSwipe() {
+        var delta = dragStartX - dragEndX;
+        if (Math.abs(delta) > 50) {
+          if (delta > 0) {
+            nextSlide();
+          } else {
+            prevSlide();
+          }
+          resetAutoplay();
+        }
+        dragStartX = 0;
+        dragEndX = 0;
+      }
+
+      startAutoplay();
+
+      // ===== 3. Carousel image lazy loading =====
+      var carouselObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var imgs = carousel.querySelectorAll('img[data-src]');
+              imgs.forEach(function (img) {
+                var src = img.dataset.src;
+                if (src) {
+                  img.src = src;
+                  img.removeAttribute('data-src');
+                  img.addEventListener('load', function () { img.classList.add('loaded'); });
+                  if (img.complete) { img.classList.add('loaded'); }
+                }
+              });
+              carouselObserver.unobserve(carousel);
+            }
+          });
+        },
+        { rootMargin: '300px', threshold: 0.01 }
+      );
+      carouselObserver.observe(carousel);
+
+      // Fallback: load carousel images after short delay
+      setTimeout(function () {
+        var imgs = carousel.querySelectorAll('img[data-src]');
+        imgs.forEach(function (img) {
+          var src = img.dataset.src;
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+            img.addEventListener('load', function () { img.classList.add('loaded'); });
+            if (img.complete) { img.classList.add('loaded'); }
+          }
+        });
+      }, 1500);
+
+      // ===== 4. Scroll-Reveal animation =====
+      var revealObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { rootMargin: '0px 0px -60px 0px', threshold: 0.1 }
+      );
+
+      var revealEls = document.querySelectorAll('.reveal');
+      revealEls.forEach(function (el) {
+        revealObserver.observe(el);
+      });
+
+      // ===== 5. Carousel responsive height =====
+      function updateCarouselHeight() {
+        if (window.innerWidth < 768) {
+          carousel.style.height = '300px';
+        } else {
+          carousel.style.height = '500px';
+        }
+      }
+      updateCarouselHeight();
+      window.addEventListener('resize', updateCarouselHeight);
+
+      console.log('冰岛蓝冰洞探险 — 详情页已就绪');
+    })();
+  </script>
+
+</body>
+</html>
