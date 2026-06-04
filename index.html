@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100种不可思议旅行 - 飞猪旅行</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          screens: {
+            'desktop': '1200px',
+          },
+          colors: {
+            'bg-primary': '#0a0a0a',
+            'brand': '#00f0ff',
+            'brand-dark': '#00d8e5',
+          },
+          fontFamily: {
+            'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    /* ===== Design Tokens ===== */
+    :root {
+      --color-bg-primary: #0a0a0a;
+      --color-text-primary: #ffffff;
+      --color-text-secondary: #a0a0a0;
+      --color-text-tertiary: #666666;
+      --color-brand: #00f0ff;
+      --color-brand-glow: rgba(0, 240, 255, 0.10);
+      --color-border-card: rgba(255, 255, 255, 0.10);
+      --transition-base: 300ms cubic-bezier(0.33, 1, 0.68, 1);
+      --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+
+    /* ===== Base Styles ===== */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== Navbar ===== */
+    .navbar {
+      transition: background-color 300ms var(--ease-out-cubic),
+                  box-shadow 300ms var(--ease-out-cubic);
+    }
+    .navbar.scrolled {
+      background-color: rgba(10, 10, 10, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    /* ===== Filter Bar ===== */
+    .filter-bar {
+      background-color: rgba(10, 10, 10, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .filter-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Filter button base */
+    .filter-btn {
+      height: 36px;
+      padding: 0 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 36px;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      background: transparent;
+      transition: all 300ms var(--ease-out-cubic);
+      user-select: none;
+    }
+    .filter-btn:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .filter-btn.selected {
+      background: #00f0ff;
+      border-color: #00f0ff;
+      color: #ffffff;
+    }
+    .filter-btn.selected:hover {
+      background: #00d8e5;
+      border-color: #00d8e5;
+    }
+
+    /* Reset button */
+    .reset-btn {
+      font-size: 13px;
+      color: #a0a0a0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 300ms var(--ease-out-cubic);
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .reset-btn:hover {
+      color: #00f0ff;
+    }
+    .reset-btn.hidden-reset {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* ===== Card Styles ===== */
+    .trip-card {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #141414;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: opacity 300ms var(--ease-out-cubic),
+                  transform 400ms var(--ease-out-cubic),
+                  border-color 400ms var(--ease-out-cubic),
+                  box-shadow 400ms var(--ease-out-cubic);
+    }
+    .trip-card:active {
+      transform: scale(0.97);
+      transition: transform 100ms var(--ease-out-cubic);
+    }
+
+    /* Card image container */
+    .card-image-wrapper {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #141414;
+    }
+    .card-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 400ms var(--ease-out-cubic), opacity 500ms ease-out;
+      opacity: 0;
+    }
+    .card-image-wrapper img.loaded {
+      opacity: 1;
+    }
+
+    /* Gradient overlay at card bottom */
+    .card-gradient {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0) 40%,
+        rgba(0, 0, 0, 0.6) 70%,
+        rgba(0, 0, 0, 0.85) 100%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Card text content */
+    .card-content {
+      position: relative;
+      z-index: 2;
+      padding: 0 16px 16px;
+      margin-top: -56px;
+    }
+    .card-title {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #ffffff;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .card-desc {
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: #a0a0a0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 12px;
+    }
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card-tag {
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.1);
+      border-radius: 8px;
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+
+    /* Rarity badge */
+    .rarity-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 3;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .rarity-badge.cold {
+      background: rgba(0, 240, 255, 0.15);
+      color: #00f0ff;
+    }
+    .rarity-badge.niche {
+      background: rgba(0, 240, 255, 0.10);
+      color: #00ccdd;
+    }
+    .rarity-badge.emerging {
+      background: rgba(255, 170, 0, 0.12);
+      color: #ffaa00;
+    }
+
+    /* Hover effects (desktop only) */
+    @media (hover: hover) {
+      .trip-card:hover {
+        transform: translateY(-8px);
+        border-color: #00f0ff;
+        box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+      }
+      .trip-card:hover .card-image-wrapper img {
+        transform: scale(1.05);
+      }
+    }
+
+    /* Card visibility for filtering */
+    .trip-card.card-hidden {
+      display: none;
+    }
+
+    /* ===== Search Input ===== */
+    .search-input {
+      height: 40px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: transparent;
+      color: #ffffff;
+      font-size: 14px;
+      padding: 0 16px;
+      outline: none;
+      transition: border-color 300ms var(--ease-out-cubic);
+      width: 160px;
+    }
+    @media (min-width: 768px) {
+      .search-input {
+        width: 200px;
+      }
+    }
+    .search-input::placeholder {
+      color: #666666;
+    }
+    .search-input:focus {
+      border-color: #00f0ff;
+    }
+
+    /* ===== Scrollbar ===== */
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* ===== Filter status line ===== */
+    .filter-status {
+      font-size: 14px;
+      color: #a0a0a0;
+      padding: 8px 0;
+      transition: all 300ms var(--ease-out-cubic);
+    }
+
+    /* ===== Empty state ===== */
+    .empty-state {
+      text-align: center;
+      padding: 80px 0;
+    }
+    .empty-state svg {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 24px;
+    }
+
+    /* ===== Footer ===== */
+    .site-footer {
+      background-color: var(--color-bg-primary);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 32px 0;
+      text-align: center;
+      font-size: 14px;
+      color: #666666;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ===== 1. Fixed Navbar ===== -->
+  <nav id="navbar" class="navbar fixed top-0 left-0 right-0 h-16 z-50 flex items-center">
+    <div class="w-full max-w-[1440px] mx-auto px-4 md:px-8 desktop:px-16 flex items-center justify-between">
+      <!-- Logo -->
+      <span class="text-2xl font-bold text-white tracking-tight whitespace-nowrap">
+        100种不可思议旅行
+      </span>
+      <!-- Search box -->
+      <input
+        type="text"
+        class="search-input"
+        placeholder="搜索不可思议的体验..."
+        aria-label="搜索旅行体验"
+      >
+    </div>
+  </nav>
+
+  <!-- ===== Main Content ===== -->
+  <main id="main-content" class="pt-24 pb-16">
+
+    <!-- ===== 2. Filter Bar ===== -->
+    <div id="filter-bar" class="filter-bar sticky top-16 z-40 py-2 relative">
+      <div class="max-w-[1440px] mx-auto px-4 md:px-8 desktop:px-16">
+
+        <!-- Filter row: scrolls horizontally on mobile -->
+        <div class="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+
+          <!-- 体验类型 -->
+          <span class="text-xs font-bold text-white flex-shrink-0">体验类型</span>
+          <button class="filter-btn" data-dimension="experience" data-value="水下">水下</button>
+          <button class="filter-btn" data-dimension="experience" data-value="高空">高空</button>
+          <button class="filter-btn" data-dimension="experience" data-value="极地">极地</button>
+          <button class="filter-btn" data-dimension="experience" data-value="荒野">荒野</button>
+          <button class="filter-btn" data-dimension="experience" data-value="城市">城市</button>
+          <button class="filter-btn" data-dimension="experience" data-value="文化">文化</button>
+          <button class="filter-btn" data-dimension="experience" data-value="美食">美食</button>
+          <button class="filter-btn" data-dimension="experience" data-value="星空">星空</button>
+          <button class="filter-btn" data-dimension="experience" data-value="其他">其他</button>
+
+          <!-- 视觉风格 -->
+          <span class="text-xs font-bold text-white flex-shrink-0 ml-4">视觉风格</span>
+          <button class="filter-btn" data-dimension="style" data-value="极简">极简</button>
+          <button class="filter-btn" data-dimension="style" data-value="赛博朋克">赛博朋克</button>
+          <button class="filter-btn" data-dimension="style" data-value="胶片复古">胶片复古</button>
+          <button class="filter-btn" data-dimension="style" data-value="暗黑">暗黑</button>
+          <button class="filter-btn" data-dimension="style" data-value="日系">日系</button>
+          <button class="filter-btn" data-dimension="style" data-value="航拍">航拍</button>
+          <button class="filter-btn" data-dimension="style" data-value="电影感">电影感</button>
+
+          <!-- 小众程度 -->
+          <span class="text-xs font-bold text-white flex-shrink-0 ml-4">小众程度</span>
+          <button class="filter-btn" data-dimension="rarity" data-value="冷门">冷门</button>
+          <button class="filter-btn" data-dimension="rarity" data-value="小众">小众</button>
+          <button class="filter-btn" data-dimension="rarity" data-value="新兴">新兴</button>
+
+          <!-- Reset button -->
+          <button id="reset-btn" class="reset-btn hidden-reset flex-shrink-0 ml-4">重置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Filter status line ===== -->
+    <div id="filter-status" class="max-w-[1440px] mx-auto px-4 md:px-8 desktop:px-16 filter-status" style="opacity: 0;">
+      <span id="filter-status-text"></span>
+      <button id="clear-filter-link" class="text-brand text-sm ml-2 hover:underline" style="display: none;">清除筛选</button>
+    </div>
+
+    <!-- ===== 3. Card Grid ===== -->
+    <div id="card-grid" class="max-w-[1440px] mx-auto px-4 md:px-8 desktop:px-16 mt-8 grid grid-cols-1 md:grid-cols-2 desktop:grid-cols-3 gap-6 md:gap-8">
+
+      <!-- Card 1: 贝加尔湖冰潜 -->
+      <article class="trip-card"
+        data-experience="水下" data-style="暗黑" data-rarity="冷门"
+        data-title="西伯利亚冰潜：贝加尔湖零下40度的蓝"
+        data-desc="在世界上最深的淡水湖中，穿越一米冰层探索晶莹剔透的水下世界">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=1" alt="贝加尔湖冰潜" loading="lazy">
+          <span class="rarity-badge cold">冷门</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">西伯利亚冰潜：贝加尔湖零下40度的蓝</h2>
+          <p class="card-desc">在世界上最深的淡水湖中，穿越一米冰层探索晶莹剔透的水下世界</p>
+          <div class="card-tags">
+            <span class="card-tag">水下</span>
+            <span class="card-tag">暗黑</span>
+            <span class="card-tag">冷门</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2: 撒哈拉星空露营 -->
+      <article class="trip-card"
+        data-experience="星空" data-style="极简" data-rarity="新兴"
+        data-title="撒哈拉沙漠星空露营"
+        data-desc="躺在世界最大沙漠中央，仰望银河横跨天际的震撼">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=2" alt="撒哈拉星空露营" loading="lazy">
+          <span class="rarity-badge emerging">新兴</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">撒哈拉沙漠星空露营</h2>
+          <p class="card-desc">躺在世界最大沙漠中央，仰望银河横跨天际的震撼</p>
+          <div class="card-tags">
+            <span class="card-tag">星空</span>
+            <span class="card-tag">极简</span>
+            <span class="card-tag">新兴</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 3: 冰岛火山内部探险 -->
+      <article class="trip-card"
+        data-experience="极地" data-style="暗黑" data-rarity="小众"
+        data-title="冰岛火山内部：地心深处的色彩"
+        data-desc="进入休眠火山的岩浆房，探索地心深处斑斓的矿物色彩">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=3" alt="冰岛火山内部探险" loading="lazy">
+          <span class="rarity-badge niche">小众</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">冰岛火山内部：地心深处的色彩</h2>
+          <p class="card-desc">进入休眠火山的岩浆房，探索地心深处斑斓的矿物色彩</p>
+          <div class="card-tags">
+            <span class="card-tag">极地</span>
+            <span class="card-tag">暗黑</span>
+            <span class="card-tag">小众</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 4: 亚马逊树冠层徒步 -->
+      <article class="trip-card"
+        data-experience="高空" data-style="航拍" data-rarity="冷门"
+        data-title="亚马逊树冠层：40米高空的雨林秘境"
+        data-desc="在热带雨林最高的树冠层漫步，俯瞰原始森林的生命脉动">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=4" alt="亚马逊树冠层徒步" loading="lazy">
+          <span class="rarity-badge cold">冷门</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">亚马逊树冠层：40米高空的雨林秘境</h2>
+          <p class="card-desc">在热带雨林最高的树冠层漫步，俯瞰原始森林的生命脉动</p>
+          <div class="card-tags">
+            <span class="card-tag">高空</span>
+            <span class="card-tag">航拍</span>
+            <span class="card-tag">冷门</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 5: 日本军舰岛废墟夜宿 -->
+      <article class="trip-card"
+        data-experience="城市" data-style="赛博朋克" data-rarity="冷门"
+        data-title="军舰岛：世界遗产废墟末日夜宿"
+        data-desc="在世界遗产废弃岛屿过夜，感受末日般的寂静与赛博朋克美学">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=5" alt="军舰岛废墟夜宿" loading="lazy">
+          <span class="rarity-badge cold">冷门</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">军舰岛：世界遗产废墟末日夜宿</h2>
+          <p class="card-desc">在世界遗产废弃岛屿过夜，感受末日般的寂静与赛博朋克美学</p>
+          <div class="card-tags">
+            <span class="card-tag">城市</span>
+            <span class="card-tag">赛博朋克</span>
+            <span class="card-tag">冷门</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 6: 挪威极光下冰海漂浮 -->
+      <article class="trip-card"
+        data-experience="水下" data-style="电影感" data-rarity="小众"
+        data-title="挪威极光下冰海漂浮体验"
+        data-desc="在北极圈内穿着特制干衣，漂浮于极光映照的冰海之上">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=6" alt="挪威极光冰海漂浮" loading="lazy">
+          <span class="rarity-badge niche">小众</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">挪威极光下冰海漂浮体验</h2>
+          <p class="card-desc">在北极圈内穿着特制干衣，漂浮于极光映照的冰海之上</p>
+          <div class="card-tags">
+            <span class="card-tag">水下</span>
+            <span class="card-tag">电影感</span>
+            <span class="card-tag">小众</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 7: 天空之镜银河倒影 -->
+      <article class="trip-card"
+        data-experience="星空" data-style="极简" data-rarity="新兴"
+        data-title="天空之镜：银河倒影超现实奇观"
+        data-desc="在玻利维亚乌尤尼盐沼中央，见证天地融合为一的超现实景象">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=7" alt="天空之镜银河倒影" loading="lazy">
+          <span class="rarity-badge emerging">新兴</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">天空之镜：银河倒影超现实奇观</h2>
+          <p class="card-desc">在玻利维亚乌尤尼盐沼中央，见证天地融合为一的超现实景象</p>
+          <div class="card-tags">
+            <span class="card-tag">星空</span>
+            <span class="card-tag">极简</span>
+            <span class="card-tag">新兴</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 8: 切尔诺贝利禁区穿越 -->
+      <article class="trip-card"
+        data-experience="城市" data-style="胶片复古" data-rarity="冷门"
+        data-title="切尔诺贝利：禁区30公里的沉默"
+        data-desc="深入核事故禁区核心地带，目睹大自然如何收回人类文明的遗迹">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=8" alt="切尔诺贝利禁区穿越" loading="lazy">
+          <span class="rarity-badge cold">冷门</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">切尔诺贝利：禁区30公里的沉默</h2>
+          <p class="card-desc">深入核事故禁区核心地带，目睹大自然如何收回人类文明的遗迹</p>
+          <div class="card-tags">
+            <span class="card-tag">城市</span>
+            <span class="card-tag">胶片复古</span>
+            <span class="card-tag">冷门</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 9: 喜马拉雅蓝冰洞徒步 -->
+      <article class="trip-card"
+        data-experience="极地" data-style="航拍" data-rarity="小众"
+        data-title="喜马拉雅：万年蓝冰洞徒步穿越"
+        data-desc="穿越海拔5000米的古老冰隧道，触摸地球数十万年的年轮印记">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=9" alt="喜马拉雅蓝冰洞徒步" loading="lazy">
+          <span class="rarity-badge niche">小众</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">喜马拉雅：万年蓝冰洞徒步穿越</h2>
+          <p class="card-desc">穿越海拔5000米的古老冰隧道，触摸地球数十万年的年轮印记</p>
+          <div class="card-tags">
+            <span class="card-tag">极地</span>
+            <span class="card-tag">航拍</span>
+            <span class="card-tag">小众</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 10: 瓦努阿图火山口边缘 -->
+      <article class="trip-card"
+        data-experience="高空" data-style="电影感" data-rarity="冷门"
+        data-title="瓦努阿图：站在活火山口的边缘"
+        data-desc="近距离直面翻滚咆哮的岩浆湖，感受地球最原始的狂暴之力">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=10" alt="瓦努阿图火山口" loading="lazy">
+          <span class="rarity-badge cold">冷门</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">瓦努阿图：站在活火山口的边缘</h2>
+          <p class="card-desc">近距离直面翻滚咆哮的岩浆湖，感受地球最原始的狂暴之力</p>
+          <div class="card-tags">
+            <span class="card-tag">高空</span>
+            <span class="card-tag">电影感</span>
+            <span class="card-tag">冷门</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 11: 纳米比亚骷髅海岸穿越 -->
+      <article class="trip-card"
+        data-experience="荒野" data-style="胶片复古" data-rarity="小众"
+        data-title="纳米比亚：骷髅海岸的死亡之美"
+        data-desc="在世界最危险的海岸线上，见证沙漠与大海的史诗级碰撞">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=11" alt="纳米比亚骷髅海岸" loading="lazy">
+          <span class="rarity-badge niche">小众</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">纳米比亚：骷髅海岸的死亡之美</h2>
+          <p class="card-desc">在世界最危险的海岸线上，见证沙漠与大海的史诗级碰撞</p>
+          <div class="card-tags">
+            <span class="card-tag">荒野</span>
+            <span class="card-tag">胶片复古</span>
+            <span class="card-tag">小众</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 12: 新西兰萤火虫洞穴漂流 -->
+      <article class="trip-card"
+        data-experience="水下" data-style="暗黑" data-rarity="新兴"
+        data-title="新西兰：百万年萤火虫洞穴漂流"
+        data-desc="乘橡皮艇穿过布满幽蓝萤火的古老溶洞，宛如穿越异星世界">
+        <div class="card-image-wrapper">
+          <img data-src="https://picsum.photos/600/337?random=12" alt="新西兰萤火虫洞穴漂流" loading="lazy">
+          <span class="rarity-badge emerging">新兴</span>
+          <div class="card-gradient"></div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">新西兰：百万年萤火虫洞穴漂流</h2>
+          <p class="card-desc">乘橡皮艇穿过布满幽蓝萤火的古老溶洞，宛如穿越异星世界</p>
+          <div class="card-tags">
+            <span class="card-tag">水下</span>
+            <span class="card-tag">暗黑</span>
+            <span class="card-tag">新兴</span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- ===== Empty State (hidden by default) ===== -->
+    <div id="empty-state" class="empty-state hidden">
+      <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="36" cy="36" r="32" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="8 4" opacity="0.6"/>
+        <circle cx="36" cy="36" r="20" stroke="#00f0ff" stroke-width="1.5" opacity="0.4"/>
+        <path d="M36 12 L42 30 L36 26 L30 30 L36 12Z" fill="#00f0ff" opacity="0.8"/>
+        <circle cx="36" cy="36" r="3" fill="#00f0ff"/>
+      </svg>
+      <p class="text-base text-[#a0a0a0] mb-2">没有找到匹配的旅行体验</p>
+      <p class="text-sm text-[#666666] mb-6">试试调整筛选条件</p>
+      <button id="empty-clear-btn" class="filter-btn" style="color: #ffffff; border-color: rgba(255,255,255,0.2);">
+        清除筛选
+      </button>
+    </div>
+
+    <!-- ===== Load More Indicator ===== -->
+    <div id="load-more" class="text-center py-8">
+      <p class="text-sm text-[#a0a0a0]">发现更多不可思议...</p>
+    </div>
+
+  </main>
+
+  <!-- ===== 4. Footer ===== -->
+  <footer class="site-footer">
+    <p>&copy; 2026 飞猪旅行 100种不可思议旅行</p>
+  </footer>
+
+  <!-- ===== JavaScript ===== -->
+  <script>
+    (function () {
+      // ===== DOM References =====
+      const navbar = document.getElementById('navbar');
+      const filterBar = document.getElementById('filter-bar');
+      const cardGrid = document.getElementById('card-grid');
+      const resetBtn = document.getElementById('reset-btn');
+      const filterStatus = document.getElementById('filter-status');
+      const filterStatusText = document.getElementById('filter-status-text');
+      const clearFilterLink = document.getElementById('clear-filter-link');
+      const emptyState = document.getElementById('empty-state');
+      const loadMore = document.getElementById('load-more');
+      const emptyClearBtn = document.getElementById('empty-clear-btn');
+
+      // All filter buttons
+      const allFilterBtns = document.querySelectorAll('.filter-btn');
+      const cards = document.querySelectorAll('.trip-card');
+
+      // ===== Track selected filters =====
+      // { experience: Set, style: Set, rarity: Set }
+      const selectedFilters = {
+        experience: new Set(),
+        style: new Set(),
+        rarity: new Set(),
+      };
+
+      // ===== 1. Navbar scroll effect =====
+      function updateNavbar() {
+        if (window.scrollY > 0) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      }
+      window.addEventListener('scroll', updateNavbar, { passive: true });
+      updateNavbar(); // Initial check
+
+      // ===== 2. Filter button click handler =====
+      allFilterBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const dimension = btn.dataset.dimension;
+          const value = btn.dataset.value;
+
+          // Toggle selected state
+          if (btn.classList.contains('selected')) {
+            btn.classList.remove('selected');
+            selectedFilters[dimension].delete(value);
+          } else {
+            btn.classList.add('selected');
+            selectedFilters[dimension].add(value);
+          }
+
+          applyFilters();
+        });
+      });
+
+      // ===== 3. Reset button =====
+      function resetAllFilters() {
+        allFilterBtns.forEach(function (btn) {
+          btn.classList.remove('selected');
+        });
+        selectedFilters.experience.clear();
+        selectedFilters.style.clear();
+        selectedFilters.rarity.clear();
+        applyFilters();
+      }
+
+      resetBtn.addEventListener('click', resetAllFilters);
+      emptyClearBtn.addEventListener('click', resetAllFilters);
+      clearFilterLink.addEventListener('click', resetAllFilters);
+
+      // ===== 4. Apply filters to cards =====
+      function applyFilters() {
+        let visibleCount = 0;
+
+        cards.forEach(function (card) {
+          var cardExp = card.dataset.experience;
+          var cardStyle = card.dataset.style;
+          var cardRarity = card.dataset.rarity;
+
+          // Check each dimension: if filters are selected, card must match at least one
+          var matchExp = selectedFilters.experience.size === 0 || selectedFilters.experience.has(cardExp);
+          var matchStyle = selectedFilters.style.size === 0 || selectedFilters.style.has(cardStyle);
+          var matchRarity = selectedFilters.rarity.size === 0 || selectedFilters.rarity.has(cardRarity);
+
+          if (matchExp && matchStyle && matchRarity) {
+            card.classList.remove('card-hidden');
+            visibleCount++;
+          } else {
+            card.classList.add('card-hidden');
+          }
+        });
+
+        updateFilterUI(visibleCount);
+      }
+
+      // ===== 5. Update filter UI (status line, reset button, empty state) =====
+      function updateFilterUI(visibleCount) {
+        var totalSelected =
+          selectedFilters.experience.size +
+          selectedFilters.style.size +
+          selectedFilters.rarity.size;
+
+        // Reset button visibility
+        if (totalSelected > 0) {
+          resetBtn.classList.remove('hidden-reset');
+        } else {
+          resetBtn.classList.add('hidden-reset');
+        }
+
+        // Status line
+        if (totalSelected > 0) {
+          var parts = [];
+          if (selectedFilters.experience.size > 0) {
+            parts.push(selectedFilters.experience.size + ' 个体验类型');
+          }
+          if (selectedFilters.style.size > 0) {
+            parts.push(selectedFilters.style.size + ' 个视觉风格');
+          }
+          if (selectedFilters.rarity.size > 0) {
+            parts.push(selectedFilters.rarity.size + ' 个小众程度');
+          }
+          filterStatusText.textContent = '已筛选 ' + parts.join('、') + ' · 共 ' + visibleCount + ' 个结果';
+          filterStatus.style.opacity = '1';
+          clearFilterLink.style.display = 'inline';
+        } else {
+          filterStatus.style.opacity = '0';
+          clearFilterLink.style.display = 'none';
+        }
+
+        // Empty state
+        if (visibleCount === 0 && totalSelected > 0) {
+          emptyState.classList.remove('hidden');
+          loadMore.classList.add('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+          loadMore.classList.remove('hidden');
+        }
+      }
+
+      // ===== 6. Image lazy loading with IntersectionObserver =====
+      var imageObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var img = entry.target;
+              var src = img.dataset.src;
+              if (src) {
+                img.src = src;
+                img.removeAttribute('data-src');
+                // Fade in once loaded
+                img.addEventListener('load', function () {
+                  img.classList.add('loaded');
+                });
+                // If image is already cached, it might have loaded before the listener
+                if (img.complete) {
+                  img.classList.add('loaded');
+                }
+              }
+              imageObserver.unobserve(img);
+            }
+          });
+        },
+        {
+          rootMargin: '200px', // Start loading 200px before visible
+          threshold: 0.01,
+        }
+      );
+
+      // Observe all card images
+      var allImages = document.querySelectorAll('.card-image-wrapper img[data-src]');
+      allImages.forEach(function (img) {
+        imageObserver.observe(img);
+      });
+
+      // ===== 7. Handle images that are already in view on load =====
+      // Fallback: if IntersectionObserver doesn't trigger quickly, load them anyway
+      setTimeout(function () {
+        var remainingImages = document.querySelectorAll('.card-image-wrapper img[data-src]');
+        remainingImages.forEach(function (img) {
+          var src = img.dataset.src;
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+            if (img.complete) {
+              img.classList.add('loaded');
+            } else {
+              img.addEventListener('load', function () {
+                img.classList.add('loaded');
+              });
+            }
+          }
+        });
+      }, 1000);
+
+      console.log('100种不可思议旅行 — 首页已就绪');
+      console.log('卡片数量: ' + cards.length);
+      console.log('筛选维度: 体验类型 / 视觉风格 / 小众程度');
+    })();
+  </script>
+
+</body>
+</html>
