@@ -3,30 +3,22 @@
 import os
 import sqlite3
 import pytest
-from flask import Flask
+from app import create_app
+
+# 共享内存数据库 URI — app 路由和测试夹具共享同一份数据
+MEMORY_DB_URI = 'file::memory:?cache=shared'
 
 
 @pytest.fixture
 def app():
     """创建 Flask 测试应用实例.
 
-    使用内存数据库，确保测试之间数据隔离.
+    使用共享内存数据库, create_app 内部会执行 schema 初始化.
     """
-    app = Flask(__name__, instance_relative_config=True)
+    app = create_app(db_path=MEMORY_DB_URI)
     app.config.update({
         'TESTING': True,
-        'DATABASE': ':memory:',
     })
-
-    # 基础错误处理
-    @app.errorhandler(404)
-    def not_found(error):
-        return {'code': 404, 'message': 'Not Found', 'data': None}, 404
-
-    @app.errorhandler(500)
-    def internal_error(error):
-        return {'code': 500, 'message': 'Internal Server Error', 'data': None}, 500
-
     yield app
 
 
@@ -38,20 +30,19 @@ def client(app):
 
 @pytest.fixture
 def db(app):
-    """创建测试用内存数据库，自动执行初始化脚本.
+    """创建测试用数据库连接, 并确保 schema 已初始化.
 
-    每次测试前重建表结构，确保测试隔离.
+    由于 create_app 内部的 _init_database 会在连接关闭后丢失
+    共享内存数据库, 此处重新执行 init.sql 并保持连接打开.
     """
-    # 读取 init.sql 文件路径
+    conn = sqlite3.connect(MEMORY_DB_URI, uri=True)
+    conn.row_factory = sqlite3.Row
+
+    # 执行 schema 初始化 (CREATE TABLE IF NOT EXISTS 可安全重复执行)
     init_sql_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         'db', 'init.sql'
     )
-
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-
-    # 执行初始化脚本
     if os.path.exists(init_sql_path):
         with open(init_sql_path, 'r', encoding='utf-8') as f:
             sql_script = f.read()
