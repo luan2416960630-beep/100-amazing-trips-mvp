@@ -1,0 +1,964 @@
+openapi: 3.0.3
+info:
+  title: 飞猪「100种不可思议旅行」MVP API
+  description: |
+    纯内容展示型旅行体验发现平台的 MVP 后端接口契约。
+
+    **MVP 范围**：仅包含首页瀑布流、三维筛选、关键词搜索、详情页 4 项功能，共 3 个 API 接口。
+
+    **不包含**：用户系统、收藏/点赞、评论、分享、预订/支付、关注、足迹、地图、UGC、推送、CMS 后台。
+  version: 1.0.0
+  contact:
+    name: 飞猪旅行产品团队
+
+servers:
+  - url: https://api.flyzoo.com/v1
+    description: 生产环境
+
+tags:
+  - name: 旅行体验
+    description: 旅行体验内容展示相关接口
+
+paths:
+
+  # ==========================================================================
+  # 1. 旅行体验列表
+  # ==========================================================================
+  /trips:
+    get:
+      summary: 获取旅行体验列表
+      description: |
+        对齐 PRD 首页瀑布流（4.4）+ 三维筛选（4.2.3）+ 关键词搜索（5.4）。
+        支持分页、多维度筛选取交集、关键词模糊搜索、排序。
+      tags:
+        - 旅行体验
+      operationId: listTrips
+      parameters:
+
+        # --- 分页 ---
+        - name: page
+          in: query
+          description: 页码，从 1 开始
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+
+        - name: page_size
+          in: query
+          description: 每页条数
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          example: 20
+
+        # --- 三维筛选 ---
+        - name: experience_types
+          in: query
+          description: |
+            体验类型筛选，逗号分隔多值，取交集。
+            可选值：水下, 高空, 极地, 荒野, 地下, 极限运动, 文化沉浸, 夜间奇观, 慢旅行
+          required: false
+          schema:
+            type: string
+          example: "极地,慢旅行"
+
+        - name: visual_styles
+          in: query
+          description: |
+            视觉风格筛选，逗号分隔多值，取交集。
+            可选值：极简, 赛博朋克, 胶片复古, 高饱和, 黑白, 电影感, 自然光
+          required: false
+          schema:
+            type: string
+          example: "电影感,自然光"
+
+        - name: rarity_level
+          in: query
+          description: |
+            小众程度筛选，逗号分隔多值，取交集。
+            可选值：冷门, 小众, 新兴
+          required: false
+          schema:
+            type: string
+          example: "小众"
+
+        # --- 关键词搜索 ---
+        - name: keyword
+          in: query
+          description: |
+            关键词搜索，匹配范围：标题(title)、一句话描述(subtitle)、目的地(destination)。
+            输入 1-50 个字符。
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example: "极光"
+
+        # --- 排序 ---
+        - name: sort
+          in: query
+          description: 排序字段
+          required: false
+          schema:
+            type: string
+            enum:
+              - created_at
+              - rarity_level
+            default: created_at
+
+        - name: order
+          in: query
+          description: 排序方向
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+
+      responses:
+        '200':
+          description: 成功返回旅行体验卡片列表
+          headers:
+            Cache-Control:
+              description: |
+                缓存策略：客户端和 CDN 可缓存 60 秒，满足 PRD 首屏 ≤2s 性能要求。
+              schema:
+                type: string
+              example: "public, max-age=60"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTripList'
+              example:
+                code: 200
+                message: "success"
+                data:
+                  items:
+                    - id: 5
+                      title: "挪威极光帐篷：在世界尽头的玻璃屋里入眠"
+                      subtitle: "躺在温暖的羊毛毯里，头顶是流动的极光瀑布"
+                      cover_image: "https://assets.flyzoo.com/covers/aurora-camp.webp"
+                      experience_type_tags:
+                        - "极地"
+                        - "夜间奇观"
+                        - "慢旅行"
+                      visual_style_tags:
+                        - "电影感"
+                        - "自然光"
+                      rarity_level: "小众"
+                      destination: "特罗姆瑟"
+                      duration: "3天2晚"
+                    - id: 4
+                      title: "阿拉斯加荒野木屋：7天无人类的极北独居"
+                      subtitle: "住进无电无网的荒野木屋与驯鹿为伴"
+                      cover_image: "https://assets.flyzoo.com/covers/alaska-cabin.webp"
+                      experience_type_tags:
+                        - "荒野"
+                        - "慢旅行"
+                      visual_style_tags:
+                        - "极简"
+                        - "自然光"
+                      rarity_level: "冷门"
+                      destination: "阿拉斯加"
+                      duration: "7天"
+                  page: 1
+                  page_size: 20
+                  total: 5
+                  total_pages: 1
+
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  # ==========================================================================
+  # 2. 旅行体验详情
+  # ==========================================================================
+  /trips/{id}:
+    get:
+      summary: 获取单个旅行体验详情
+      description: |
+        对齐 PRD 详情页全部模块（6.2）。
+        返回字段按详情页布局顺序排列：媒体轮播 → 核心信息 → 标题标签 → 故事叙述 → 高清图集 → 相关推荐。
+      tags:
+        - 旅行体验
+      operationId: getTripDetail
+      parameters:
+        - name: id
+          in: path
+          description: 旅行体验 ID
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 1
+
+      responses:
+        '200':
+          description: 成功返回旅行体验完整详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetailResponse'
+              example:
+                code: 200
+                message: "success"
+                data:
+                  id: 1
+                  media_list:
+                    - type: "image"
+                      url: "https://assets.flyzoo.com/media/baikal-01.webp"
+                      alt: "冰层下潜水员剪影"
+                    - type: "image"
+                      url: "https://assets.flyzoo.com/media/baikal-02.webp"
+                      alt: "透过冰层看潜水员"
+                    - type: "video"
+                      url: "https://assets.flyzoo.com/media/baikal-dive.mp4"
+                      alt: "冰潜水下跟拍"
+                      cover_frame: "https://assets.flyzoo.com/media/baikal-thumb.webp"
+                  cover_image: "https://assets.flyzoo.com/covers/baikal-ice-dive.webp"
+                  destination: "贝加尔湖"
+                  destination_region: "俄罗斯西伯利亚"
+                  duration: "5天4晚"
+                  best_season: "2月-3月"
+                  difficulty_level: "硬核"
+                  title: "西伯利亚冰潜：贝加尔湖零下40度的蓝"
+                  subtitle: "在世界上最深的淡水湖冰层下自由潜行"
+                  experience_type_tags:
+                    - "水下"
+                    - "极地"
+                  visual_style_tags:
+                    - "极简"
+                    - "自然光"
+                  rarity_level: "冷门"
+                  story_title: "冰层之下：一个关于勇气的故事"
+                  story_highlights:
+                    - "在晶莹剔透的冰层下体验失重漂浮感"
+                    - "世界最深淡水湖的能见度可达40米"
+                    - "专业冰潜教练1对1陪同确保安全"
+                  story_body: |
+                    我从未想过自己会在西伯利亚的冬天，站在一米厚的冰层上，穿戴好潜水装备，
+                    然后跳进一个凿开的三角形冰洞。水温恒定在零度附近，但真正的挑战不是寒冷，
+                    而是心理上的恐惧——头顶是坚不可摧的冰层，只有那个小小的三角形开口是回到
+                    人间的通道。然而当阳光穿透冰层，将整个水下世界染成梦幻的蓝色，那一刻你意
+                    识到，恐惧是通往不可思议之美的入场券。
+                  gallery_images:
+                    - url: "https://assets.flyzoo.com/gallery/baikal-g01.webp"
+                      alt: "冰下蓝色世界全景"
+                      caption: "阳光穿透一米冰层形成的蓝色光柱"
+                    - url: "https://assets.flyzoo.com/gallery/baikal-g02.webp"
+                      alt: "潜水员与气泡"
+                      caption: "呼出的气泡在冰层下汇聚成银色湖泊"
+                    - url: "https://assets.flyzoo.com/gallery/baikal-g03.webp"
+                      alt: "冰洞入口俯拍"
+                      caption: "从水下仰望，冰洞入口像一轮三角形的太阳"
+                  related_experiences:
+                    - id: 5
+                      title: "挪威极光帐篷：在世界尽头的玻璃屋里入眠"
+                      subtitle: "躺在温暖的羊毛毯里，头顶是流动的极光瀑布"
+                      cover_image: "https://assets.flyzoo.com/covers/aurora-camp.webp"
+                      experience_type_tags:
+                        - "极地"
+                        - "慢旅行"
+                      visual_style_tags:
+                        - "电影感"
+                        - "自然光"
+                      rarity_level: "小众"
+                      destination: "特罗姆瑟"
+                      duration: "3天2晚"
+                    - id: 4
+                      title: "阿拉斯加荒野木屋：7天无人类的极北独居"
+                      subtitle: "住进无电无网的荒野木屋与驯鹿为伴"
+                      cover_image: "https://assets.flyzoo.com/covers/alaska-cabin.webp"
+                      experience_type_tags:
+                        - "荒野"
+                        - "慢旅行"
+                      visual_style_tags:
+                        - "极简"
+                        - "自然光"
+                      rarity_level: "冷门"
+                      destination: "阿拉斯加"
+                      duration: "7天"
+                  recommendation_rule: "same_style"
+                  created_at: "2026-05-20T10:30:00Z"
+                  updated_at: "2026-06-04T08:00:00Z"
+
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+
+        '404':
+          $ref: '#/components/responses/404NotFound'
+
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+  # ==========================================================================
+  # 3. 可用筛选标签
+  # ==========================================================================
+  /filters:
+    get:
+      summary: 获取所有可用筛选标签
+      description: |
+        对齐 PRD 筛选组件（4.2.2）。
+        返回体验类型、视觉风格、小众程度三个筛选维度的全部枚举值及展示文案。
+        前端可直接用此接口渲染筛选标签，无需硬编码枚举值。
+      tags:
+        - 旅行体验
+      operationId: getFilterTags
+      responses:
+        '200':
+          description: 成功返回筛选标签枚举值
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterTagsResponse'
+              example:
+                code: 200
+                message: "success"
+                data:
+                  experience_types:
+                    - value: "水下"
+                      label: "水下"
+                    - value: "高空"
+                      label: "高空"
+                    - value: "极地"
+                      label: "极地"
+                    - value: "荒野"
+                      label: "荒野"
+                    - value: "地下"
+                      label: "地下"
+                    - value: "极限运动"
+                      label: "极限运动"
+                    - value: "文化沉浸"
+                      label: "文化沉浸"
+                    - value: "夜间奇观"
+                      label: "夜间奇观"
+                    - value: "慢旅行"
+                      label: "慢旅行"
+                  visual_styles:
+                    - value: "极简"
+                      label: "极简"
+                    - value: "赛博朋克"
+                      label: "赛博朋克"
+                    - value: "胶片复古"
+                      label: "胶片复古"
+                    - value: "高饱和"
+                      label: "高饱和"
+                    - value: "黑白"
+                      label: "黑白"
+                    - value: "电影感"
+                      label: "电影感"
+                    - value: "自然光"
+                      label: "自然光"
+                  rarity_levels:
+                    - value: "冷门"
+                      label: "冷门（极少人知道）"
+                    - value: "小众"
+                      label: "小众（圈内知名）"
+                    - value: "新兴"
+                      label: "新兴（开始流行但未大众化）"
+
+        '500':
+          $ref: '#/components/responses/500InternalError'
+
+# ============================================================================
+# Components
+# ============================================================================
+components:
+
+  # --- 复用数据结构 ---
+  schemas:
+
+    # ---- 首页卡片 ----
+    TripCard:
+      type: object
+      description: 首页瀑布流卡片数据（对齐 PRD 4.3.1 卡片字段定义）
+      required:
+        - id
+        - title
+        - subtitle
+        - cover_image
+        - experience_type_tags
+        - visual_style_tags
+        - rarity_level
+        - destination
+        - duration
+      properties:
+        id:
+          type: integer
+          description: 旅行体验唯一标识
+          example: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: 旅行体验标题
+          example: "西伯利亚冰潜：贝加尔湖零下40度的蓝"
+        subtitle:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: 一句话描述，吸引用户点击
+          example: "在世界上最深的淡水湖冰层下自由潜行"
+        cover_image:
+          type: string
+          format: uri
+          description: 卡片封面图 URL，竖版构图，最小分辨率 750×1000px
+          example: "https://assets.flyzoo.com/covers/baikal-ice-dive.webp"
+        experience_type_tags:
+          type: array
+          description: 体验类型标签，至少 1 个
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ExperienceType'
+        visual_style_tags:
+          type: array
+          description: 视觉风格标签，至少 1 个
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/VisualStyle'
+        rarity_level:
+          $ref: '#/components/schemas/RarityLevel'
+        destination:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: 目的地名称
+          example: "贝加尔湖"
+        duration:
+          type: string
+          description: 建议体验时长（自由文本）
+          example: "5天4晚"
+
+    # ---- 详情页完整数据 ----
+    TripDetail:
+      type: object
+      description: |
+        旅行体验完整详情（对齐 PRD 6.2 全部模块）。
+        返回字段顺序对应详情页布局：媒体轮播 → 核心信息 → 标题标签 → 故事叙述 → 高清图集 → 相关推荐。
+      required:
+        - id
+        - title
+        - subtitle
+        - cover_image
+        - experience_type_tags
+        - visual_style_tags
+        - rarity_level
+        - destination
+        - duration
+        - best_season
+        - difficulty_level
+        - media_list
+        - story_title
+        - story_body
+        - gallery_images
+        - related_experiences
+        - recommendation_rule
+        - created_at
+        - updated_at
+      properties:
+        # -- 6.2.1 顶部媒体轮播 --
+        media_list:
+          type: array
+          description: 媒体资源列表，至少 1 项。图片和视频混合排列，支持左右滑动轮播。
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MediaItem'
+
+        # -- 额外视觉字段 --
+        cover_image:
+          type: string
+          format: uri
+          description: 封面图 URL
+          example: "https://assets.flyzoo.com/covers/baikal-ice-dive.webp"
+
+        # -- 6.2.2 核心信息区 --
+        destination:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: 目的地名称
+          example: "贝加尔湖"
+        destination_region:
+          type: string
+          nullable: true
+          maxLength: 30
+          description: 所属地区/国家
+          example: "俄罗斯西伯利亚"
+        duration:
+          type: string
+          description: 建议体验时长（自由文本）
+          example: "5天4晚"
+        best_season:
+          type: string
+          description: 最佳体验季节（自由文本）
+          example: "2月-3月"
+        difficulty_level:
+          $ref: '#/components/schemas/DifficultyLevel'
+
+        # -- 6.2.3 标题与标签区 --
+        title:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: 旅行体验标题
+          example: "西伯利亚冰潜：贝加尔湖零下40度的蓝"
+        subtitle:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: 一句话描述
+          example: "在世界上最深的淡水湖冰层下自由潜行"
+        experience_type_tags:
+          type: array
+          minItems: 1
+          description: 体验类型标签
+          items:
+            $ref: '#/components/schemas/ExperienceType'
+        visual_style_tags:
+          type: array
+          minItems: 1
+          description: 视觉风格标签
+          items:
+            $ref: '#/components/schemas/VisualStyle'
+        rarity_level:
+          $ref: '#/components/schemas/RarityLevel'
+
+        # -- 6.2.4 故事叙述区 --
+        story_title:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 故事标题
+          example: "冰层之下：一个关于勇气的故事"
+        story_highlights:
+          type: array
+          nullable: true
+          maxItems: 5
+          description: 故事亮点摘要列表，在正文前以项目符号展示（3-5 条）
+          items:
+            type: string
+            minLength: 1
+            maxLength: 50
+          example:
+            - "在晶莹剔透的冰层下体验失重漂浮感"
+            - "世界最深淡水湖的能见度可达40米"
+            - "专业冰潜教练1对1陪同确保安全"
+        story_body:
+          type: string
+          description: 故事正文（富文本），建议 500-3000 字
+          example: "我从未想过自己会在西伯利亚的冬天，站在一米厚的冰层上..."
+
+        # -- 6.2.5 高清图集区 --
+        gallery_images:
+          type: array
+          minItems: 2
+          description: 高清图集列表，至少 2 项，支持点击查看大图
+          items:
+            $ref: '#/components/schemas/GalleryImage'
+
+        # -- 6.2.6 相关推荐 --
+        related_experiences:
+          type: array
+          minItems: 2
+          maxItems: 4
+          description: 相关推荐旅行体验列表（2-4 项），每项复用首页卡片字段
+          items:
+            $ref: '#/components/schemas/RelatedExperience'
+        recommendation_rule:
+          $ref: '#/components/schemas/RecommendationRule'
+
+        # -- 元数据 --
+        id:
+          type: integer
+          description: 旅行体验唯一标识
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间（ISO 8601）
+          example: "2026-05-20T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: 最后更新时间（ISO 8601）
+          example: "2026-06-04T08:00:00Z"
+
+    # ---- 筛选标签枚举 ----
+    FilterTags:
+      type: object
+      description: 筛选组件三个维度的全部枚举值（对齐 PRD 4.2.2）
+      required:
+        - experience_types
+        - visual_styles
+        - rarity_levels
+      properties:
+        experience_types:
+          type: array
+          description: 体验类型全部可选项
+          items:
+            type: object
+            required:
+              - value
+              - label
+            properties:
+              value:
+                $ref: '#/components/schemas/ExperienceType'
+              label:
+                type: string
+                description: 前端展示文案
+        visual_styles:
+          type: array
+          description: 视觉风格全部可选项
+          items:
+            type: object
+            required:
+              - value
+              - label
+            properties:
+              value:
+                $ref: '#/components/schemas/VisualStyle'
+              label:
+                type: string
+                description: 前端展示文案
+        rarity_levels:
+          type: array
+          description: 小众程度全部可选项
+          items:
+            type: object
+            required:
+              - value
+              - label
+            properties:
+              value:
+                $ref: '#/components/schemas/RarityLevel'
+              label:
+                type: string
+                description: 前端展示文案（含语义说明）
+
+    # ---- 分页响应包装 ----
+    PaginatedTripList:
+      type: object
+      description: 统一分页响应格式
+      required:
+        - code
+        - message
+        - data
+      properties:
+        code:
+          type: integer
+          description: 业务状态码
+          example: 200
+        message:
+          type: string
+          description: 状态描述
+          example: "success"
+        data:
+          type: object
+          required:
+            - items
+            - page
+            - page_size
+            - total
+            - total_pages
+          properties:
+            items:
+              type: array
+              description: 旅行体验卡片列表
+              items:
+                $ref: '#/components/schemas/TripCard'
+            page:
+              type: integer
+              description: 当前页码
+              example: 1
+            page_size:
+              type: integer
+              description: 每页条数
+              example: 20
+            total:
+              type: integer
+              description: 符合条件的总记录数
+              example: 50
+            total_pages:
+              type: integer
+              description: 总页数
+              example: 3
+
+    # ---- 详情响应包装 ----
+    TripDetailResponse:
+      type: object
+      description: 旅行详情统一响应格式
+      required:
+        - code
+        - message
+        - data
+      properties:
+        code:
+          type: integer
+          description: 业务状态码
+          example: 200
+        message:
+          type: string
+          description: 状态描述
+          example: "success"
+        data:
+          $ref: '#/components/schemas/TripDetail'
+
+    # ---- 筛选标签响应包装 ----
+    FilterTagsResponse:
+      type: object
+      description: 筛选标签统一响应格式
+      required:
+        - code
+        - message
+        - data
+      properties:
+        code:
+          type: integer
+          description: 业务状态码
+          example: 200
+        message:
+          type: string
+          description: 状态描述
+          example: "success"
+        data:
+          $ref: '#/components/schemas/FilterTags'
+
+    # ---- 通用错误响应 ----
+    ErrorResponse:
+      type: object
+      description: 通用错误响应格式
+      required:
+        - code
+        - message
+        - data
+      properties:
+        code:
+          type: integer
+          description: HTTP 状态码
+          enum:
+            - 400
+            - 404
+            - 500
+        message:
+          type: string
+          description: 人类可读的错误描述
+        data:
+          type: object
+          nullable: true
+          description: 错误详情（始终为 null）
+      example:
+        code: 400
+        message: "参数 page 必须为大于等于 1 的整数"
+        data: null
+
+    # ---- 嵌套对象 ----
+
+    MediaItem:
+      type: object
+      description: 媒体轮播项（对齐 PRD 6.2.1）
+      required:
+        - type
+        - url
+        - alt
+      properties:
+        type:
+          type: string
+          description: 媒体资源类型
+          enum:
+            - image
+            - video
+          example: "image"
+        url:
+          type: string
+          format: uri
+          description: 资源 URL。图片最小宽度 1080px；视频支持 MP4 格式。
+          example: "https://assets.flyzoo.com/media/baikal-01.webp"
+        alt:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 图片无障碍替代文本
+          example: "冰层下潜水员剪影"
+        cover_frame:
+          type: string
+          format: uri
+          description: 视频封面帧（type 为 video 时必填）
+          example: "https://assets.flyzoo.com/media/baikal-thumb.webp"
+
+    GalleryImage:
+      type: object
+      description: 高清图集项（对齐 PRD 6.2.5）
+      required:
+        - url
+        - alt
+      properties:
+        url:
+          type: string
+          format: uri
+          description: 高清图片 URL，最小宽度 1080px
+          example: "https://assets.flyzoo.com/gallery/baikal-g01.webp"
+        alt:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 图片描述（无障碍）
+          example: "冰下蓝色世界全景"
+        caption:
+          type: string
+          maxLength: 100
+          description: 图片说明文字，在图片下方展示
+          example: "阳光穿透一米冰层形成的蓝色光柱"
+
+    RelatedExperience:
+      type: object
+      description: 相关推荐项（对齐 PRD 6.2.6，复用首页卡片字段）
+      required:
+        - id
+        - title
+        - subtitle
+        - cover_image
+        - experience_type_tags
+        - visual_style_tags
+        - rarity_level
+        - destination
+        - duration
+      properties:
+        id:
+          type: integer
+          description: 推荐旅行体验 ID
+          example: 5
+        title:
+          type: string
+          minLength: 1
+          maxLength: 30
+          description: 标题
+          example: "挪威极光帐篷：在世界尽头的玻璃屋里入眠"
+        subtitle:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: 一句话描述
+          example: "躺在温暖的羊毛毯里，头顶是流动的极光瀑布"
+        cover_image:
+          type: string
+          format: uri
+          description: 封面图 URL
+          example: "https://assets.flyzoo.com/covers/aurora-camp.webp"
+        experience_type_tags:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ExperienceType'
+        visual_style_tags:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/VisualStyle'
+        rarity_level:
+          $ref: '#/components/schemas/RarityLevel'
+        destination:
+          type: string
+          description: 目的地
+          example: "特罗姆瑟"
+        duration:
+          type: string
+          description: 建议时长
+          example: "3天2晚"
+
+    # ---- 枚举类型 ----
+    ExperienceType:
+      type: string
+      description: 体验类型枚举（对齐 PRD 4.2.2 维度一）
+      enum:
+        - "水下"
+        - "高空"
+        - "极地"
+        - "荒野"
+        - "地下"
+        - "极限运动"
+        - "文化沉浸"
+        - "夜间奇观"
+        - "慢旅行"
+
+    VisualStyle:
+      type: string
+      description: 视觉风格枚举（对齐 PRD 4.2.2 维度二）
+      enum:
+        - "极简"
+        - "赛博朋克"
+        - "胶片复古"
+        - "高饱和"
+        - "黑白"
+        - "电影感"
+        - "自然光"
+
+    RarityLevel:
+      type: string
+      description: 小众程度枚举（对齐 PRD 4.2.2 维度三）
+      enum:
+        - "冷门"
+        - "小众"
+        - "新兴"
+
+    DifficultyLevel:
+      type: string
+      description: 难度等级枚举（对齐 PRD 6.2.2）
+      enum:
+        - "入门"
+        - "中等"
+        - "硬核"
+        - "极限"
+
+    RecommendationRule:
+      type: string
+      description: 推荐逻辑枚举（对齐 PRD 6.2.6）
+      enum:
+        - "same_type"
+        - "same_style"
+        - "same_region"
+
+  # --- 复用响应 ----
+  responses:
+    400BadRequest:
+      description: 请求参数无效
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: 400
+            message: "参数 page_size 不能超过 50"
+            data: null
+
+    404NotFound:
+      description: 请求的资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: 404
+            message: "旅行体验不存在"
+            data: null
+
+    500InternalError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: 500
+            message: "服务器内部错误，请稍后重试"
+            data: null
